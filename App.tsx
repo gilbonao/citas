@@ -1,118 +1,165 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useState} from 'react';
 import {
   SafeAreaView,
-  ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
-  useColorScheme,
-  View,
+  Pressable,
+  FlatList,
+  Alert,
+  Modal
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import Formulario  from './src/components/Formulario';
+import Paciente from './src/components/Paciente';
+import InformacionPaciente from './src/components/InformacionPaciente';
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+const App = () => {
+  
+  // Los hooks se colocan en la parte superior del componente
+  const [ modalVisible, setModalVisible ] = useState(false);
+  const [pacientes, setPacientes] = useState([]);
+  const [paciente, setPaciente] = useState({});
+  const [modalPaciente, setModalPaciente] = useState(false);
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+  const pacienteEditar = id => {
+    console.log('Editando...', id);
+    const pacienteEditar = pacientes.filter(paciente =>  paciente.id === id);
+    //console.log(pacienteEditar);
+    setPaciente(pacienteEditar[0]);
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  };
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const pacienteEliminar = id => {
+    console.log('Eliminando...', id);
+    Alert.alert(
+      '¿Deseas eliminar este paciente?',
+      'Un paciente eliminado no se puede recuperar',
+      [
+        {text: 'Cancelar'},
+        {text: 'Sí, eliminar', onPress: () => {
+          //console.log('Eliminando...');
+          const pacientesActualizados = pacientes.filter(
+            pacienteState => pacienteState.id !== id);
+            //console.log(pacientesActualizados);
+            setPacientes(pacientesActualizados);
+        }},
+      ]
+    );
+
+  };
+
+  const cerrarModal = () => {
+    setModalVisible(false);
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
+
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.titulo}>
+        Administrador de Citas {''}
+        <Text style={styles.tituloBold}>Veterinaria</Text>
+      </Text>
+
+      <Pressable 
+        //onPress={ nuevaCitaHandler }
+        onPress={() => setModalVisible(!modalVisible)}
+        style={styles.btnNuevaCita}
+      >
+        <Text
+          style={styles.btnTextoNuevaCita}
+        >Nueva Cita</Text>
+      </Pressable>
+
+      {pacientes.length === 0 ? 
+        <Text style={styles.noPacientes}>No hay pacientes aún</Text> : 
+        <FlatList
+          style={styles.listado} 
+          data={pacientes}
+          keyExtractor={(item) => item.id}
+          renderItem={({item}) => {
+            return (
+              <Paciente 
+                item={item}
+                setModalVisible={setModalVisible}
+                setPaciente={setPaciente}
+                pacienteEditar={pacienteEditar}
+                pacienteEliminar={pacienteEliminar}
+                setModalPaciente={setModalPaciente}
+              />
+            )
+          } }
+        />
+      
+      }
+
+      {modalVisible && (
+        <Formulario 
+          modalVisible={modalVisible}
+          // setModalVisible={setModalVisible}
+          cerrarModal={cerrarModal}
+          pacientes={pacientes}
+          setPacientes={setPacientes}
+          paciente={paciente}
+          setPaciente={setPaciente}
+        />
+      )}
+      
+      <Modal 
+        visible={modalPaciente}
+        animationType='fade'
+      >
+        <InformacionPaciente 
+          paciente={paciente}
+          setPaciente={setPaciente}
+          setModalPaciente={setModalPaciente}
+        />
+      </Modal>
+      
     </SafeAreaView>
+    
   );
-}
+};
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    backgroundColor: '#F3F4F6',
+    flex: 1
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  titulo: {
+    textAlign: 'center',
+    fontSize: 30,
+    color: '#374151',
+    fontWeight: '600'
   },
-  sectionDescription: {
-    marginTop: 8,
+  tituloBold: {
+    fontWeight: '900',
+    color: '#6D28D9'
+  },
+  btnNuevaCita: {
+    backgroundColor: '#6D28D9',
+    padding: 15,
+    marginTop: 30,
+    marginHorizontal: 20,
+    borderRadius: 10
+  },
+  btnTextoNuevaCita: {
+    textAlign: 'center',
+    color: '#FFF',
     fontSize: 18,
-    fontWeight: '400',
+    fontWeight: '900',
+    textTransform: 'uppercase'
   },
-  highlight: {
-    fontWeight: '700',
+  noPacientes: {
+    color: '#800080',
+    marginTop: 40,
+    textAlign: 'center',
+    fontSize: 24,
+    fontWeight: '600'
   },
+  listado: {
+    marginTop: 50,
+    marginHorizontal: 30
+  }
 });
 
 export default App;
